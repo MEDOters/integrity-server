@@ -19,6 +19,7 @@ app.use(express.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname)));
 
 const ADMIN_TOKEN = "medo123";
+// ===== استخدام PORT من البيئة =====
 const PORT = process.env.PORT || 3000;
 
 // ===== التخزين المؤقت =====
