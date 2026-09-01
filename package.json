@@ -1,0 +1,12 @@
+{
+  "name": "integrity-server",
+  "version": "1.0.0",
+  "description": "سيرفر معلومات النظام",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2"
+  }
+}
