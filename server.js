@@ -35,6 +35,9 @@ let lastSystemInfo = {
     received_at: new Date().toISOString()
 };
 
+// ===== الهاش =====
+let expectedMD5 = "";
+
 // ===== التحقق من التوكن =====
 const checkAuth = (req) => {
     const auth = req.get("Authorization");
@@ -42,7 +45,23 @@ const checkAuth = (req) => {
 };
 
 // ============================================================
-// ====== مسارات API ======
+// ====== مسارات الهاش (Integrity) ======
+// ============================================================
+
+app.get("/integrity", (req, res) => {
+    res.json({ success: true, hash: expectedMD5 || "" });
+});
+
+app.post("/integrity", (req, res) => {
+    if (!checkAuth(req)) {
+        return res.status(401).json({ error: "Unauthorized" });
+    }
+    expectedMD5 = req.body.hash?.toLowerCase() || "";
+    res.json({ success: true });
+});
+
+// ============================================================
+// ====== مسارات معلومات النظام ======
 // ============================================================
 
 app.post("/api/system-info", (req, res) => {
@@ -98,7 +117,7 @@ app.delete("/api/system-info", (req, res) => {
 });
 
 // ============================================================
-// ====== مسارات الصفحات ======
+// ====== الصفحات ======
 // ============================================================
 
 app.get("/system-info", (req, res) => {
@@ -129,7 +148,6 @@ app.get("/", (req, res) => {
                 a { color: #00e676; text-decoration: none; }
                 a:hover { text-decoration: underline; }
                 .box { background: #1a1a2e; padding: 20px; border-radius: 10px; margin: 10px 0; }
-                .status { color: #00e676; }
                 code { background: #333; padding: 2px 8px; border-radius: 4px; }
             </style>
         </head>
@@ -139,15 +157,14 @@ app.get("/", (req, res) => {
                 <h3>📊 الروابط المتاحة:</h3>
                 <ul>
                     <li><a href="/system-info">📊 معلومات النظام</a></li>
-                    <li><a href="/api/system-info">📡 API - معلومات النظام</a></li>
-                    <li><a href="/test">🧪 اختبار السيرفر</a></li>
+                    <li><a href="/api/system-info">📡 API</a></li>
+                    <li><a href="/test">🧪 اختبار</a></li>
                     <li><a href="/admin">🔐 لوحة التحكم</a></li>
                 </ul>
             </div>
             <div class="box">
-                <p>✅ السيرفر يعمل على <strong>Railway</strong></p>
+                <p>✅ السيرفر يعمل 🚀</p>
                 <p>🔑 التوكن: <code>medo123</code></p>
-                <p>📦 الإصدار: v1.0.0</p>
             </div>
         </body>
         </html>
